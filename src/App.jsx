@@ -53,6 +53,10 @@ const average = (arr) =>
 export default function App() {
   const [movies, setMovies] = useState(tempMovieData);
   const [watched, setWatched] = useState(tempWatchedData);
+  const KEY = "f84fc31d";
+  fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=matrix`)
+    .then((res) => res.json())
+    .then((data) => console.log(data));
 
   return (
     <>
