@@ -73,12 +73,14 @@ export default function App() {
   }
   useEffect(
     function () {
+      const controller = new AbortController();
       async function fetchMovies() {
         try {
           setIsLoading(true);
           setError("");
           const res = await fetch(
-            `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+            `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
+            { signal: controller.signal }
           );
           if (!res.ok)
             throw new Error("Something went wrong when fetching the movies");
@@ -86,10 +88,11 @@ export default function App() {
           if (data.Response === "False")
             throw new Error("Error fetching movies");
           setMovies(data.Search);
-          console.log(data);
         } catch (err) {
           console.error(err.message);
-          setError(err.message);
+          if (error.name !== "AbortError") {
+            setError(err.message);
+          }
         } finally {
           setIsLoading(false);
           setError("");
@@ -100,9 +103,13 @@ export default function App() {
         setError("");
         return;
       }
+      handleCloseMovie();
       fetchMovies();
+      return function () {
+        controller.abort();
+      };
     },
-    [query]
+    [query, error]
   );
 
   return (
@@ -174,6 +181,22 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     onAddWatched(newWatchedMovie);
     onCloseMovie();
   }
+
+  useEffect(
+    function () {
+      function callback(e) {
+        if (e.code === "Escape") {
+          onCloseMovie();
+        }
+      }
+      document.addEventListener("keydown", callback);
+
+      return function () {
+        document.removeEventListener("keydown", callback);
+      };
+    },
+    [onCloseMovie]
+  );
   useEffect(
     function () {
       async function getMovieDetails() {
